@@ -61,7 +61,7 @@ public class ServerController {
             if (!msg.isEmpty() && dataOutputStream != null) {
                 dataOutputStream.writeUTF(msg);
                 dataOutputStream.flush();
-                txtArea.appendText("Server: " + msg + "\n");
+                txtArea.appendText("Server : " + msg + "\n");
                 txtMessage.clear();
             }
         } catch (IOException e) {
