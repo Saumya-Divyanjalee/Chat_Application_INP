@@ -6,14 +6,12 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 
@@ -39,17 +37,32 @@ public class ClientController {
         new Thread(() -> {
             try {
                 socket = new Socket("localhost", 3000);
-
                 dataInputStream = new DataInputStream(socket.getInputStream());
+
                 while (true) {
-                    message = dataInputStream.readUTF();
-                    txtArea.appendText("Server :"+message);
+                    String type = dataInputStream.readUTF();
+
+                    if (type.equals("IMAGE")) {
+                        int length = dataInputStream.readInt();
+                        byte[] imageBytes = new byte[length];
+                        dataInputStream.readFully(imageBytes);
+
+                        ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
+                        Image image = new Image(bais);
+
+                        Platform.runLater(() -> {
+                            imageViewId.setImage(image);
+                            txtArea.appendText("Received an image\n");
+                        });
+
+                        String textMessage = type;
+                        Platform.runLater(() -> txtArea.appendText("Server: " + textMessage + "\n"));
+                    }
                 }
 
-
             } catch (IOException e) {
-                throw new RuntimeException(e);
-             }
+                e.printStackTrace();
+            }
         }).start();
     }
 

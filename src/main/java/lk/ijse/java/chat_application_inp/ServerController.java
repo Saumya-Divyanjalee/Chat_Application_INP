@@ -8,13 +8,13 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
 
 public class ServerController {
 
@@ -46,6 +46,7 @@ public class ServerController {
 
                 dataInputStream = new DataInputStream(socket.getInputStream());
 
+
                 while (true) {
                     message=dataInputStream.readUTF();
                     if(message.equals("IMAGE")){
@@ -75,5 +76,27 @@ public class ServerController {
         dataOutputStream = new DataOutputStream(socket.getOutputStream());
         dataOutputStream.writeUTF(txtMessage.getText());
         dataOutputStream.flush();
+    }
+
+    public void imageOnAction(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showOpenDialog(new Stage());
+
+        if (file != null) {
+            try {
+                byte[] imageBytes = Files.readAllBytes(file.toPath());
+                dataOutputStream = new DataOutputStream(socket.getOutputStream());
+                dataOutputStream.writeUTF("IMAGE");
+                dataOutputStream.writeInt(imageBytes.length);
+                dataOutputStream.write(imageBytes);
+                dataOutputStream.flush();
+
+                txtArea.appendText(file.getName()+"\n");
+                txtArea.appendText(file.getAbsolutePath()+"\n");
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
