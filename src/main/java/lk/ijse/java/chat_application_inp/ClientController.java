@@ -40,6 +40,8 @@ public class ClientController {
                 dataInputStream = new DataInputStream(socket.getInputStream());
 
                 while (true) {
+                    message = dataInputStream.readUTF();
+                    txtArea.appendText(message);
                     String type = dataInputStream.readUTF();
 
                     if (type.equals("IMAGE")) {
