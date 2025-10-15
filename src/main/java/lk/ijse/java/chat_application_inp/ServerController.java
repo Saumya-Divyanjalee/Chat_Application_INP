@@ -6,7 +6,10 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -15,6 +18,7 @@ import java.net.Socket;
 
 public class ServerController {
 
+    public ImageView imageViewId;
     @FXML
     private Button btnsenId;
 
@@ -24,48 +28,52 @@ public class ServerController {
     @FXML
     private TextField txtMessage;
 
-    private ServerSocket serverSocket;
-    private Socket socket;
-    private DataInputStream dataInputStream;
-    private DataOutputStream dataOutputStream;
+    ServerSocket serverSocket;
+    Socket socket;
+    DataInputStream dataInputStream;
+    DataOutputStream dataOutputStream;
+    String message ="";
 
     public void initialize() {
         new Thread(() -> {
             try {
                 serverSocket = new ServerSocket(3000);
-                Platform.runLater(() -> txtArea.appendText("Server started...\n"));
+                txtArea.appendText("Server started\n");
 
                 socket = serverSocket.accept();
-                Platform.runLater(() -> txtArea.appendText("Client connected!\n"));
+                txtArea.appendText("Client connected\n");
+
 
                 dataInputStream = new DataInputStream(socket.getInputStream());
-                dataOutputStream = new DataOutputStream(socket.getOutputStream());
 
-                String message;
                 while (true) {
-                    message = dataInputStream.readUTF();
-                    String finalMessage = message;
-                    Platform.runLater(() -> txtArea.appendText("Client: " + finalMessage + "\n"));
-                }
+                    message=dataInputStream.readUTF();
+                    if(message.equals("IMAGE")){
+                        int length = dataInputStream.readInt();
+                        byte[] imageBytes = new byte[length];
+                        dataInputStream.readFully(imageBytes);
+                        ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
+                        Image image = new Image(bais);
+                        imageViewId.setImage(image);
 
-            } catch (IOException e) {
-                Platform.runLater(() -> txtArea.appendText("Error: " + e.getMessage() + "\n"));
+
+                    }
+                    txtArea.appendText(message+"\n");
+
+                    }
+                } catch (IOException e) {
+                 e.printStackTrace();
             }
+
         }).start();
+
     }
 
     @FXML
-    void sendOnAction(ActionEvent event) {
-        try {
-            String msg = txtMessage.getText().trim();
-            if (!msg.isEmpty() && dataOutputStream != null) {
-                dataOutputStream.writeUTF(msg);
-                dataOutputStream.flush();
-                txtArea.appendText("Server : " + msg + "\n");
-                txtMessage.clear();
-            }
-        } catch (IOException e) {
-            txtArea.appendText("Error sending message: " + e.getMessage() + "\n");
-        }
+    void sendOnAction(ActionEvent event) throws IOException {
+
+        dataOutputStream = new DataOutputStream(socket.getOutputStream());
+        dataOutputStream.writeUTF(txtMessage.getText());
+        dataOutputStream.flush();
     }
 }
